@@ -9,7 +9,7 @@ using NzbDrone.Core.Messaging.Events;
 using NzbDrone.Core.Profiles.Qualities;
 using NzbDrone.Core.Qualities;
 using NzbDrone.Core.Queue;
-using NzbDrone.SignalR;
+using Lidarr.SignalR;
 using Lidarr.Http;
 using Lidarr.Http.Extensions;
 

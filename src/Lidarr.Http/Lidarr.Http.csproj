@@ -18,6 +18,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\NzbDrone.Core\Lidarr.Core.csproj" />
-    <ProjectReference Include="..\NzbDrone.SignalR\Lidarr.SignalR.csproj" />
+    <ProjectReference Include="..\Lidarr.SignalR\Lidarr.SignalR.csproj" />
   </ItemGroup>
 </Project>

@@ -4,7 +4,7 @@ using System.Linq;
 using Nancy;
 using NzbDrone.Core.DecisionEngine.Specifications;
 using NzbDrone.Core.Music;
-using NzbDrone.SignalR;
+using Lidarr.SignalR;
 using Lidarr.Http.Extensions;
 using Lidarr.Http.REST;
 

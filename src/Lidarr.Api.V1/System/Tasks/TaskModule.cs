@@ -5,7 +5,7 @@ using NzbDrone.Common.Extensions;
 using NzbDrone.Core.Datastore.Events;
 using NzbDrone.Core.Jobs;
 using NzbDrone.Core.Messaging.Events;
-using NzbDrone.SignalR;
+using Lidarr.SignalR;
 using Lidarr.Http;
 
 namespace Lidarr.Api.V1.System.Tasks

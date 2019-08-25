@@ -1,38 +1,32 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using FluentAssertions;
-using Microsoft.AspNet.SignalR.Client;
-using Microsoft.AspNet.SignalR.Client.Transports;
 using NLog;
 using NLog.Config;
 using NLog.Targets;
 using NUnit.Framework;
 using Lidarr.Api.V1.Blacklist;
-using Lidarr.Api.V1.Commands;
 using Lidarr.Api.V1.Config;
 using Lidarr.Api.V1.DownloadClient;
-using Lidarr.Api.V1.TrackFiles;
 using Lidarr.Api.V1.History;
 using Lidarr.Api.V1.Profiles.Quality;
 using Lidarr.Api.V1.RootFolders;
 using Lidarr.Api.V1.Artist;
 using Lidarr.Api.V1.Albums;
-using Lidarr.Api.V1.Tracks;
 using Lidarr.Api.V1.Tags;
 using NzbDrone.Common.EnvironmentInfo;
-using NzbDrone.Common.Serializer;
 using NzbDrone.Core.Qualities;
-using NzbDrone.Core.Music.Commands;
 using NzbDrone.Integration.Test.Client;
-using NzbDrone.SignalR;
 using NzbDrone.Test.Common.Categories;
 using RestSharp;
 using NzbDrone.Core.MediaFiles.TrackImport.Manual;
 using NzbDrone.Test.Common;
+using Microsoft.AspNetCore.SignalR.Client;
+using Lidarr.SignalR;
 
 namespace NzbDrone.Integration.Test
 {
@@ -62,7 +56,7 @@ namespace NzbDrone.Integration.Test
         public ClientBase<AlbumResource> WantedCutoffUnmet;
 
         private List<SignalRMessage> _signalRReceived;
-        private Connection _signalrConnection;
+        private HubConnection _signalrConnection;
 
         protected IEnumerable<SignalRMessage> SignalRMessages => _signalRReceived;
 
@@ -141,19 +135,11 @@ namespace NzbDrone.Integration.Test
         }
 
         [TearDown]
-        public void IntegrationTearDown()
+        public async Task IntegrationTearDown()
         {
             if (_signalrConnection != null)
             {
-                switch (_signalrConnection.State)
-                {
-                    case ConnectionState.Connected:
-                    case ConnectionState.Connecting:
-                        {
-                            _signalrConnection.Stop();
-                            break;
-                        }
-                }
+                await _signalrConnection.StopAsync();
 
                 _signalrConnection = null;
                 _signalRReceived = new List<SignalRMessage>();
@@ -180,33 +166,49 @@ namespace NzbDrone.Integration.Test
             return path;
         }
 
-        protected void ConnectSignalR()
+        protected async Task ConnectSignalR()
         {
             _signalRReceived = new List<SignalRMessage>();
-            _signalrConnection = new Connection("http://localhost:8686/signalr");
-            _signalrConnection.Start(new LongPollingTransport()).ContinueWith(task =>
+            _signalrConnection = new HubConnectionBuilder().WithUrl("http://localhost:8686/signalr/messages").Build();
+
+
+            var cts = new CancellationTokenSource();
+
+                _signalrConnection.Closed += e =>
             {
-                if (task.IsFaulted)
-                {
-                    Assert.Fail("SignalrConnection failed. {0}", task.Exception.GetBaseException());
-                }
+                cts.Cancel();
+                return Task.CompletedTask;
+            };
+
+                _signalrConnection.On<SignalRMessage>("receiveMessage", (message) =>
+            {
+                _signalRReceived.Add(message);
             });
 
+            var connected = false;
             var retryCount = 0;
 
-            while (_signalrConnection.State != ConnectionState.Connected)
+            while (!connected)
             {
-                if (retryCount > 25)
+                try
                 {
-                    Assert.Fail("Couldn't establish signalr connection. State: {0}", _signalrConnection.State);
+                    Console.WriteLine("Connecting to signalR");
+
+                        await _signalrConnection.StartAsync();
+                    connected = true;
+                    break;
+                }
+                catch (Exception e)
+                {
+                    if (retryCount > 25)
+                    {
+                        Assert.Fail("Couldn't establish signalR connection");
+                    }
                 }
 
                 retryCount++;
-                Console.WriteLine("Connecting to signalR" + _signalrConnection.State);
                 Thread.Sleep(200);
             }
-
-            _signalrConnection.Received += json => _signalRReceived.Add(Json.Deserialize<SignalRMessage>(json)); ;
         }
 
         public static void WaitForCompletion(Func<bool> predicate, int timeout = 10000, int interval = 500)
