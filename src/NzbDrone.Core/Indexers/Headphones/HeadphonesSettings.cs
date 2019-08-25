@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using FluentValidation;
-using FluentValidation.Results;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Core.Annotations;
 using NzbDrone.Core.Validation;
@@ -11,14 +10,12 @@ namespace NzbDrone.Core.Indexers.Headphones
     {
         public HeadphonesSettingsValidator()
         {
-            Custom(newznab =>
+            RuleFor(c => c).Custom((c, context) =>
             {
-                if (newznab.Categories.Empty())
+                if (c.Categories.Empty())
                 {
-                    return new ValidationFailure("", "'Categories' must be provided");
+                    context.AddFailure("'Categories' must be provided");
                 }
-
-                return null;
             });
 
             RuleFor(c => c.Username).NotEmpty();
