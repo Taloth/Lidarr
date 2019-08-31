@@ -223,7 +223,7 @@ namespace NzbDrone.Integration.Test
             if (predicate())
                 return;
 
-            Assert.Fail("Timed on wait");
+            Assert.Fail("Timed out on WaitForCompletion");
         }
 
         public ArtistResource EnsureArtist(string lidarrId, string artistName, bool? monitored = null)
