@@ -3,7 +3,6 @@ using Nancy;
 using Nancy.Authentication.Forms;
 using Nancy.Extensions;
 using Nancy.ModelBinding;
-using NzbDrone.Common.EnsureThat;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Core.Authentication;
 using NzbDrone.Core.Configuration;
@@ -19,8 +18,8 @@ namespace Lidarr.Http.Authentication
         {
             _userService = userService;
             _configFileProvider = configFileProvider;
-            Post["/login"] = x => Login(this.Bind<LoginResource>());
-            Get["/logout"] = x => Logout();
+            Post("/login", x => Login(this.Bind<LoginResource>()));
+            Get("/logout", x => Logout());
         }
 
         private Response Login(LoginResource resource)

@@ -3,11 +3,12 @@ using System.Linq;
 using Nancy;
 using Nancy.Authentication.Basic;
 using Nancy.Authentication.Forms;
-using Nancy.Security;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Core.Authentication;
 using NzbDrone.Core.Configuration;
 using Lidarr.Http.Extensions;
+using System.Security.Claims;
+using System.Security.Principal;
 
 namespace Lidarr.Http.Authentication
 {
@@ -19,7 +20,7 @@ namespace Lidarr.Http.Authentication
     public class AuthenticationService : IAuthenticationService
     {
         private readonly IUserService _userService;
-        private static readonly NzbDroneUser AnonymousUser = new NzbDroneUser { UserName = "Anonymous" };
+        private const string AnonymousUser = "Anonymous";
         
         private static string API_KEY;
         private static AuthenticationType AUTH_METHOD;
@@ -31,35 +32,35 @@ namespace Lidarr.Http.Authentication
             AUTH_METHOD = configFileProvider.AuthenticationMethod;
         }
 
-        public IUserIdentity Validate(string username, string password)
+        public ClaimsPrincipal Validate(string username, string password)
         {
             if (AUTH_METHOD == AuthenticationType.None)
             {
-                return AnonymousUser;
+                return new ClaimsPrincipal(new GenericIdentity(AnonymousUser));
             }
 
             var user = _userService.FindUser(username, password);
 
             if (user != null)
             {
-                return new NzbDroneUser { UserName = user.Username };
+                return new ClaimsPrincipal(new GenericIdentity(user.Username));
             }
 
             return null;
         }
 
-        public IUserIdentity GetUserFromIdentifier(Guid identifier, NancyContext context)
+        public ClaimsPrincipal GetUserFromIdentifier(Guid identifier, NancyContext context)
         {
             if (AUTH_METHOD == AuthenticationType.None)
             {
-                return AnonymousUser;
+                return new ClaimsPrincipal(new GenericIdentity(AnonymousUser));
             }
 
             var user = _userService.FindUser(identifier);
 
             if (user != null)
             {
-                return new NzbDroneUser { UserName = user.Username };
+                return new ClaimsPrincipal(new GenericIdentity(user.Username));
             }
 
             return null;
