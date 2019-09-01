@@ -8,7 +8,7 @@ using NzbDrone.Common.Exceptions;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Core.Configuration;
 
-namespace NzbDrone.Host.AccessControl
+namespace NzbDrone.Host.NetFramework.AccessControl
 {
     public interface IUrlAclAdapter
     {

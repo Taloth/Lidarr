@@ -10,10 +10,10 @@ using Microsoft.Owin.Hosting.Tracing;
 using NLog;
 using NzbDrone.Common.EnvironmentInfo;
 using NzbDrone.Core.Configuration;
-using NzbDrone.Host.Owin.MiddleWare;
+using NzbDrone.Host.NetFramework.MiddleWare;
 using Owin;
 
-namespace NzbDrone.Host.Owin
+namespace NzbDrone.Host.NetFramework
 {
     public interface IOwinAppFactory
     {

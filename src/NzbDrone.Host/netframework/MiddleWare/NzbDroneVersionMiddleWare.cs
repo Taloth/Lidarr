@@ -4,7 +4,7 @@ using Microsoft.Owin;
 using NzbDrone.Common.EnvironmentInfo;
 using Owin;
 
-namespace NzbDrone.Host.Owin.MiddleWare
+namespace NzbDrone.Host.NetFramework.MiddleWare
 {
     public class NzbDroneVersionMiddleWare : IOwinMiddleWare
     {

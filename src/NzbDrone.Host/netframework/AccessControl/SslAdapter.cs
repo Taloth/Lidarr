@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 using NLog;
 using NzbDrone.Core.Configuration;
 
-namespace NzbDrone.Host.AccessControl
+namespace NzbDrone.Host.NetFramework.AccessControl
 {
     public interface ISslAdapter
     {

@@ -34,6 +34,15 @@ namespace NzbDrone.Host
 #endif
 
             Container.Register<INancyBootstrapper, LidarrBootstrapper>();
+
+            if (OsInfo.IsWindows)
+            {
+                Container.Register<INzbDroneServiceFactory, NzbDroneServiceFactory>();
+            }
+            else
+            {
+                Container.Register<INzbDroneServiceFactory, DummyNzbDroneServiceFactory>();
+            }
         }
     }
 }

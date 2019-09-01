@@ -1,8 +1,9 @@
 using System;
 using NLog;
 using NzbDrone.Host.AccessControl;
+using NzbDrone.Host.NetFramework.AccessControl;
 
-namespace NzbDrone.Host.Owin
+namespace NzbDrone.Host.NetFramework
 {
     public class OwinHostController : IHostController
     {
@@ -12,8 +13,7 @@ namespace NzbDrone.Host.Owin
         private readonly Logger _logger;
         private IDisposable _owinApp;
 
-        public OwinHostController(
-                                  IOwinAppFactory owinAppFactory,
+        public OwinHostController(IOwinAppFactory owinAppFactory,
                                   IRemoteAccessAdapter remoteAccessAdapter,
                                   IUrlAclAdapter urlAclAdapter,
                                   Logger logger)

@@ -2,7 +2,7 @@
 using NLog;
 using NzbDrone.Common.Processes;
 
-namespace NzbDrone.Host.AccessControl
+namespace NzbDrone.Host.NetFramework.AccessControl
 {
     public interface INetshProvider
     {

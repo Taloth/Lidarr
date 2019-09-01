@@ -1,4 +1,4 @@
-﻿namespace NzbDrone.Host.AccessControl
+﻿namespace NzbDrone.Host.NetFramework.AccessControl
 {
     public class UrlAcl
     {
