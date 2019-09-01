@@ -12,12 +12,17 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="FluentValidation" Version="8.4.0" />
-    <PackageReference Include="Ical.Net" Version="2.2.32" />
     <PackageReference Include="Nancy" Version="2.0.0" />
     <PackageReference Include="Nancy.Authentication.Basic" Version="2.0.0" />
     <PackageReference Include="Nancy.Authentication.Forms" Version="2.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
     <PackageReference Include="NLog" Version="4.6.7" />
     <PackageReference Include="System.IO.Abstractions" Version="4.0.11" />
+    <PackageReference Include="Ical.Net" Version="4.1.11" GeneratePathProperty="true"/>
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="Ical.Net">
+      <HintPath>$(PkgIcal_Net)lib\netstandard1.3\Ical.Net.dll</HintPath>
+    </Reference>
   </ItemGroup>
 </Project>
