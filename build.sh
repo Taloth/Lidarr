@@ -1,20 +1,16 @@
 #! /bin/bash
 msBuildVersion='15.0'
 outputFolder='./_output'
-outputFolderLinux='./_output_linux'
-outputFolderMacOS='./_output_macos'
-outputFolderMacOSApp='./_output_macos_app'
 testPackageFolder='./_tests/'
 sourceFolder='./src'
 slnFile=$sourceFolder/Lidarr.sln
-updateFolder=$outputFolder/Lidarr.Update
-updateFolderMono=$outputFolderLinux/Lidarr.Update
+winAppProj=$sourceFolder/NzbDrone/Lidarr.csproj
 
 #Artifact variables
 artifactsFolder="./_artifacts";
-artifactsFolderWindows=$artifactsFolder/windows
-artifactsFolderLinux=$artifactsFolder/linux
-artifactsFolderMacOS=$artifactsFolder/macos
+artifactsFolderWindows=$artifactsFolder/windows/Lidarr
+artifactsFolderLinux=$artifactsFolder/linux/Lidarr
+artifactsFolderMacOS=$artifactsFolder/macos/Lidarr
 artifactsFolderMacOSApp=$artifactsFolder/macos-app
 
 nuget='tools/nuget/nuget.exe';
@@ -53,13 +49,8 @@ UpdateVersionNumber()
 CleanFolder()
 {
     local path=$1
-    local keepConfigFiles=$2
 
     find $path -name "*.transform" -exec rm "{}" \;
-
-    if [ $keepConfigFiles != true ] ; then
-        find $path -name "*.dll.config" -exec rm "{}" \;
-    fi
 
     echo "Removing FluentValidation.Resources files"
     find $path -name "FluentValidation.resources.dll" -exec rm "{}" \;
@@ -68,37 +59,8 @@ CleanFolder()
     echo "Removing vshost files"
     find $path -name "*.vshost.exe" -exec rm "{}" \;
 
-    echo "Removing dylib files"
-    find $path -name "*.dylib" -exec rm "{}" \;
-
     echo "Removing Empty folders"
     find $path -depth -empty -type d -exec rm -r "{}" \;
-}
-
-BuildWithMSBuild()
-{
-    installationPath=`$vswhere -latest -products \* -requires Microsoft.Component.MSBuild -property installationPath`
-    installationPath=${installationPath/C:\\/\/c\/}
-    installationPath=${installationPath//\\/\/}
-    msBuild="$installationPath/MSBuild/$msBuildVersion/Bin"
-    echo $msBuild
-
-    export PATH=$msBuild:$PATH
-    CheckExitCode MSBuild.exe $slnFile //p:Configuration=Debug //p:Platform=x86 //t:Clean //m
-    CheckExitCode MSBuild.exe $slnFile //p:Configuration=Release //p:Platform=x86 //t:Clean //m
-    $nuget locals all -clear
-    $nuget restore $slnFile
-    CheckExitCode MSBuild.exe $slnFile //p:Configuration=Release //p:Platform=x86 //t:Build //m //p:AllowedReferenceRelatedFileExtensions=.pdb
-}
-
-BuildWithXbuild()
-{
-    export MONO_IOMAP=case
-    CheckExitCode msbuild /p:Configuration=Debug /t:Clean $slnFile
-    CheckExitCode msbuild /p:Configuration=Release /t:Clean $slnFile
-    mono $nuget locals all -clear
-    mono $nuget restore $slnFile
-    CheckExitCode msbuild /p:Configuration=Release /p:Platform=x86 /t:Build /p:AllowedReferenceRelatedFileExtensions=.pdb $slnFile
 }
 
 LintUI()
@@ -108,7 +70,7 @@ LintUI()
     ProgressEnd 'ESLint'
 
     ProgressStart 'Stylelint'
-    if [ $runtime = "dotnet" ] ; then
+    if [ $os = "windows" ] ; then
         CheckExitCode yarn stylelint-windows
     else
         CheckExitCode yarn stylelint-linux
@@ -123,19 +85,17 @@ Build()
     rm -rf $outputFolder
     rm -rf $testPackageFolder
 
-    if [ $runtime = "dotnet" ] ; then
-        BuildWithMSBuild
-    else
-        BuildWithXbuild
+    CheckExitCode dotnet clean $slnFile -c Debug
+    CheckExitCode dotnet clean $slnFile -c Release
+    CheckExitCode dotnet build $slnFile -c Release
+    CheckExitCode dotnet publish $slnFile -c Release --no-self-contained -r win-x64
+    CheckExitCode dotnet publish $slnFile -c Release --no-self-contained -r linux-x64
+    CheckExitCode dotnet publish $slnFile -c Release --no-self-contained -r osx-x64
+
+    # The tray app is a WindowsDesktop project and wont build on posix
+    if [ $os = "windows" ] ; then
+        CheckExitCode dotnet publish $winAppProj -c Release --no-self-contained -r win-x64
     fi
-
-    CleanFolder $outputFolder false
-
-    echo "Removing Mono.Posix.dll"
-    rm $outputFolder/Mono.Posix.dll
-
-    echo "Adding LICENSE.md"
-    cp LICENSE.md $outputFolder
 
     ProgressEnd 'Build'
 }
@@ -144,7 +104,6 @@ RunGulp()
 {
     ProgressStart 'yarn install'
     yarn install
-    #npm-cache install npm || CheckExitCode npm install --no-optional --no-bin-links
     ProgressEnd 'yarn install'
 
     LintUI
@@ -154,55 +113,68 @@ RunGulp()
     ProgressEnd 'Running gulp'
 }
 
-PackageMono()
+PackageLinux()
 {
-    ProgressStart 'Creating Mono Package'
+    ProgressStart 'Creating Linux Package'
 
-    rm -rf $outputFolderLinux
+    rm -r $artifactsFolderLinux
+    mkdir -p $artifactsFolderLinux
+    cp -r $outputFolder/linux-x64/publish/* $artifactsFolderLinux
+    cp -r $outputFolder/Lidarr.Update/linux-x64/publish $artifactsFolderLinux/Lidarr.Update
+    cp -r $outputFolder/UI $artifactsFolderLinux
 
-    echo "Copying Binaries"
-    cp -r $outputFolder $outputFolderLinux
+    CleanFolder $artifactsFolderLinux
+
+    echo "Adding LICENSE.md"
+    cp LICENSE.md $artifactsFolderLinux
 
     echo "Removing Service helpers"
-    rm -f $outputFolderLinux/ServiceUninstall.*
-    rm -f $outputFolderLinux/ServiceInstall.*
+    rm -f $artifactsFolderLinux/ServiceUninstall.*
+    rm -f $artifactsFolderLinux/ServiceInstall.*
 
     echo "Removing native windows binaries Sqlite, fpcalc"
-    rm -f $outputFolderLinux/sqlite3.*
-    rm -f $outputFolderLinux/fpcalc*
-
-    echo "Renaming Lidarr.Console.exe to Lidarr.exe"
-    rm $outputFolderLinux/Lidarr.exe*
-    for file in $outputFolderLinux/Lidarr.Console.exe*; do
-        mv "$file" "${file//.Console/}"
-    done
+    rm -f $artifactsFolderLinux/fpcalc*
 
     echo "Removing Lidarr.Windows"
-    rm $outputFolderLinux/Lidarr.Windows.*
+    rm $artifactsFolderLinux/Lidarr.Windows.*
 
     echo "Adding Lidarr.Mono to UpdatePackage"
-    cp $outputFolderLinux/Lidarr.Mono.* $updateFolderMono
+    cp $artifactsFolderLinux/Lidarr.Mono.* $artifactsFolderLinux/Lidarr.Update
 
-    ProgressEnd 'Creating Mono Package'
+    ProgressEnd 'Creating Linux Package'
 }
 
 PackageMacOS()
 {
     ProgressStart 'Creating MacOS Package'
 
-    rm -rf $outputFolderMacOS
-    mkdir $outputFolderMacOS
+    rm -r $artifactsFolderMacOS
+    mkdir -p $artifactsFolderMacOS
+    cp -r $outputFolder/osx-x64/publish/* $artifactsFolderMacOS
+    cp -r $outputFolder/Lidarr.Update/osx-x64/publish $artifactsFolderMacOS/Lidarr.Update
+    cp -r $outputFolder/UI $artifactsFolderMacOS
+
+    CleanFolder $artifactsFolderMacOS
+
+    echo "Adding LICENSE.md"
+    cp LICENSE.md $artifactsFolderMacOS
 
     echo "Adding Startup script"
-    cp ./macOS/Lidarr $outputFolderMacOS
-    dos2unix $outputFolderMacOS/Lidarr
+    cp ./macOS/Lidarr $artifactsFolderMacOS
+    dos2unix $artifactsFolderMacOS/Lidarr
 
-    echo "Copying Binaries"
-    cp -r $outputFolderLinux/* $outputFolderMacOS
-    cp $outputFolder/fpcalc $outputFolderMacOS
+    echo "Removing Service helpers"
+    rm -f $artifactsFolderMacOS/ServiceUninstall.*
+    rm -f $artifactsFolderMacOS/ServiceInstall.*
 
-    echo "Adding sqlite dylibs"
-    cp $sourceFolder/Libraries/Sqlite/*.dylib $outputFolderMacOS
+    echo "Removing native windows fpcalc"
+    rm -f $artifactsFolderMacOS/fpcalc.exe
+
+    echo "Removing Lidarr.Windows"
+    rm $artifactsFolderMacOS/Lidarr.Windows.*
+
+    echo "Adding Lidarr.Mono to UpdatePackage"
+    cp $artifactsFolderMacOS/Lidarr.Mono.* $artifactsFolderMacOS/Lidarr.Update
 
     ProgressEnd 'Creating MacOS Package'
 }
@@ -211,24 +183,16 @@ PackageMacOSApp()
 {
     ProgressStart 'Creating macOS App Package'
 
-    rm -rf $outputFolderMacOSApp
-    mkdir $outputFolderMacOSApp
-    cp -r ./macOS/Lidarr.app $outputFolderMacOSApp
-    mkdir -p $outputFolderMacOSApp/Lidarr.app/Contents/MacOS
-
-    echo "Adding Startup script"
-    cp ./macOS/Lidarr $outputFolderMacOSApp/Lidarr.app/Contents/MacOS
-    dos2unix $outputFolderMacOSApp/Lidarr.app/Contents/MacOS/Lidarr
+    rm -r $artifactsFolderMacOSApp
+    mkdir $artifactsFolderMacOSApp
+    cp -r ./macOS/Lidarr.app $artifactsFolderMacOSApp
+    mkdir -p $artifactsFolderMacOSApp/Lidarr.app/Contents/MacOS
 
     echo "Copying Binaries"
-    cp -r $outputFolderLinux/* $outputFolderMacOSApp/Lidarr.app/Contents/MacOS
-    cp $outputFolder/fpcalc $outputFolderMacOSApp/Lidarr.app/Contents/MacOS
-
-    echo "Adding sqlite dylibs"
-    cp $sourceFolder/Libraries/Sqlite/*.dylib $outputFolderMacOSApp/Lidarr.app/Contents/MacOS
+    cp -r $artifactsFolderMacOS/* $artifactsFolderMacOSApp/Lidarr.app/Contents/MacOS
 
     echo "Removing Update Folder"
-    rm -r $outputFolderMacOSApp/Lidarr.app/Contents/MacOS/Lidarr.Update
+    rm -r $artifactsFolderMacOSApp/Lidarr.app/Contents/MacOS/Lidarr.Update
 
     ProgressEnd 'Creating macOS App Package'
 }
@@ -237,70 +201,59 @@ PackageTests()
 {
     ProgressStart 'Creating Test Package'
 
-    if [ $runtime = "dotnet" ] ; then
-        $nuget install NUnit.ConsoleRunner -Version 3.10.0 -Output $testPackageFolder
-    else
-        mono $nuget install NUnit.ConsoleRunner -Version 3.10.0 -Output $testPackageFolder
-    fi
-
-    cp ./test.sh $testPackageFolder
-
+    cp ./test.sh $testPackageFolder/win-x64/publish
+    cp ./test.sh $testPackageFolder/linux-x64/publish
+    cp ./test.sh $testPackageFolder/osx-x64/publish
+    
     rm -f $testPackageFolder/*.log.config
 
-    CleanFolder $testPackageFolder true
+    # Mac fpcalc being in the linux tests breaks fpcalc detection
+    rm $testPackageFolder/linux-x64/publish/fpcalc
 
-    echo "Adding sqlite dylibs"
-    cp $sourceFolder/Libraries/Sqlite/*.dylib $testPackageFolder
+    # geckodriver.exe isn't copied by dotnet publish
+    cp $testPackageFolder/geckodriver.exe $testPackageFolder/win-x64/publish
+
+    CleanFolder $testPackageFolder
 
     ProgressEnd 'Creating Test Package'
 }
 
-CleanupWindowsPackage()
+PackageWindows()
 {
-    ProgressStart 'Cleaning Windows Package'
+    ProgressStart 'Creating Windows Package'
+
+    rm -r $artifactsFolderWindows
+    mkdir -p $artifactsFolderWindows
+    cp -r $outputFolder/win-x64/publish/* $artifactsFolderWindows
+    cp -r $outputFolder/Lidarr.Update/win-x64/publish $artifactsFolderWindows/Lidarr.Update
+    cp -r $outputFolder/UI $artifactsFolderWindows
+
+    CleanFolder $artifactsFolderWindows
+        
+    echo "Adding LICENSE.md"
+    cp LICENSE.md $artifactsFolderWindows
 
     echo "Removing Lidarr.Mono"
-    rm -f $outputFolder/Lidarr.Mono.*
+    rm -f $artifactsFolderWindows/Lidarr.Mono.*
 
     echo "Adding Lidarr.Windows to UpdatePackage"
-    cp $outputFolder/Lidarr.Windows.* $updateFolder
+    cp $artifactsFolderWindows/Lidarr.Windows.* $artifactsFolderWindows/Lidarr.Update
 
     echo "Removing MacOS fpcalc"
-    rm $outputFolder/fpcalc
+    rm $artifactsFolderWindows/fpcalc
 
-    ProgressEnd 'Cleaning Windows Package'
-}
-
-PackageArtifacts()
-{
-    echo "Creating Artifact Directories"
-    
-    rm -rf $artifactsFolder
-    mkdir $artifactsFolder
-    
-    mkdir $artifactsFolderWindows
-    mkdir $artifactsFolderMacOS
-    mkdir $artifactsFolderLinux
-    mkdir $artifactsFolderWindows/Lidarr
-    mkdir $artifactsFolderMacOS/Lidarr
-    mkdir $artifactsFolderLinux/Lidarr
-    mkdir $artifactsFolderMacOSApp
-    
-    cp -r $outputFolder/* $artifactsFolderWindows/Lidarr
-    cp -r $outputFolderMacOSApp/* $artifactsFolderMacOSApp
-    cp -r $outputFolderMacOS/* $artifactsFolderMacOS/Lidarr
-    cp -r $outputFolderLinux/* $artifactsFolderLinux/Lidarr
+    ProgressEnd 'Creating Windows Package'
 }
 
 # Use mono or .net depending on OS
 case "$(uname -s)" in
     CYGWIN*|MINGW32*|MINGW64*|MSYS*)
         # on windows, use dotnet
-        runtime="dotnet"
+        os="windows"
         ;;
     *)
         # otherwise use mono
-        runtime="mono"
+        os="posix"
         ;;
 esac
 
@@ -347,9 +300,8 @@ fi
 # Only package if we haven't set only-backend or only-frontend
 if [ -z "$ONLY_BACKEND" ] && [ -z "$ONLY_FRONTEND" ];
 then
-    PackageMono
+    PackageWindows
+    PackageLinux
     PackageMacOS
     PackageMacOSApp
-    CleanupWindowsPackage
-    PackageArtifacts
 fi
