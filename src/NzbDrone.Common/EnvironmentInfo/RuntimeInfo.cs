@@ -65,6 +65,11 @@ namespace NzbDrone.Common.EnvironmentInfo
         {
             get
             {
+                if (OsInfo.IsNotWindows)
+                {
+                    return false;
+                }
+
                 try
                 {
                     var principal = new WindowsPrincipal(WindowsIdentity.GetCurrent());
