@@ -2,7 +2,7 @@ using Microsoft.AspNet.SignalR;
 using Newtonsoft.Json;
 using NzbDrone.Common.Serializer;
 
-namespace NzbDrone.SignalR
+namespace NzbDrone.SignalR.NetFramework
 {
     public static class SignalRJsonSerializer
     {

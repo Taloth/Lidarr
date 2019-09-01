@@ -3,7 +3,7 @@ using Microsoft.AspNet.SignalR;
 using Microsoft.AspNet.SignalR.Infrastructure;
 using NzbDrone.Common.Composition;
 
-namespace NzbDrone.SignalR
+namespace NzbDrone.SignalR.NetFramework
 {
     public class SignalRDependencyResolver : DefaultDependencyResolver
     {

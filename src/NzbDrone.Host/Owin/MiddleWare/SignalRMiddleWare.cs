@@ -1,8 +1,7 @@
 using System;
 using Microsoft.AspNet.SignalR;
 using NzbDrone.Common.Composition;
-using NzbDrone.Common.EnvironmentInfo;
-using NzbDrone.SignalR;
+using NzbDrone.SignalR.NetFramework;
 using Owin;
 
 namespace NzbDrone.Host.Owin.MiddleWare

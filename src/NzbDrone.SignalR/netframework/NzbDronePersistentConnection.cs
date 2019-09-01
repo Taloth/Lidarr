@@ -8,14 +8,8 @@ using NzbDrone.Common.Extensions;
 using NzbDrone.Core.Configuration;
 using NzbDrone.Core.Datastore.Events;
 
-namespace NzbDrone.SignalR
+namespace NzbDrone.SignalR.NetFramework
 {
-    public interface IBroadcastSignalRMessage
-    {
-        bool IsConnected { get; }
-        void BroadcastMessage(SignalRMessage message);
-    }
-
     public sealed class NzbDronePersistentConnection : PersistentConnection, IBroadcastSignalRMessage
     {
         private IPersistentConnectionContext Context => ((ConnectionManager)GlobalHost.ConnectionManager).GetConnection(GetType());
@@ -41,20 +35,22 @@ namespace NzbDrone.SignalR
             }
         }
 
-        public void BroadcastMessage(SignalRMessage message)
+        public Task BroadcastMessage(SignalRMessage message)
         {
             string lastMessage;
             if (_messageHistory.TryGetValue(message.Name, out lastMessage))
             {
                 if (message.Action == ModelAction.Updated && message.Body.ToJson() == lastMessage)
                 {
-                    return;
+                    return Task.CompletedTask;
                 }
             }
 
             _messageHistory[message.Name] = message.Body.ToJson();
 
             Context.Connection.Broadcast(message);
+
+            return Task.CompletedTask;
         }
         
         protected override bool AuthorizeRequest(IRequest request)

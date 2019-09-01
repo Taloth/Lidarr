@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using Microsoft.AspNet.SignalR.Infrastructure;
 
-namespace NzbDrone.SignalR
+namespace NzbDrone.SignalR.NetFramework
 {
     public class NoOpPerformanceCounter : IPerformanceCounter
     {

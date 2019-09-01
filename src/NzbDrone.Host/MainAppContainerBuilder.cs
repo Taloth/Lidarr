@@ -3,8 +3,10 @@ using Nancy.Bootstrapper;
 using Lidarr.Http;
 using NzbDrone.Common.Composition;
 using NzbDrone.Common.EnvironmentInfo;
-using NzbDrone.Common.Http.Dispatchers;
-using NzbDrone.SignalR;
+
+#if !NETCOREAPP3_0
+using NzbDrone.SignalR.NetFramework;
+#endif
 
 namespace NzbDrone.Host
 {
@@ -27,7 +29,9 @@ namespace NzbDrone.Host
         private MainAppContainerBuilder(StartupContext args, List<string> assemblies)
             : base(args, assemblies)
         {
+#if !NETCOREAPP3_0
             AutoRegisterImplementations<NzbDronePersistentConnection>();
+#endif
 
             Container.Register<INancyBootstrapper, LidarrBootstrapper>();
         }

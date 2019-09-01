@@ -1,7 +1,7 @@
 using System;
 using Newtonsoft.Json.Serialization;
 
-namespace NzbDrone.SignalR
+namespace NzbDrone.SignalR.NetFramework
 {
     public class SignalRContractResolver : IContractResolver
     {
