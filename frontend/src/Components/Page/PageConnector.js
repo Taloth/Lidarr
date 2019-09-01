@@ -117,12 +117,14 @@ function createMapStateToProps() {
     selectIsPopulated,
     selectErrors,
     selectAppProps,
+    (state) => state.system.status.item.isNetCore,
     createDimensionsSelector(),
     (
       enableColorImpairedMode,
       isPopulated,
       errors,
       app,
+      isNetCore,
       dimensions
     ) => {
       return {
@@ -130,6 +132,7 @@ function createMapStateToProps() {
         ...errors,
         isPopulated,
         isSmallScreen: dimensions.isSmallScreen,
+        isNetCore,
         enableColorImpairedMode
       };
     }

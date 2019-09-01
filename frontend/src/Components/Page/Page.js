@@ -72,6 +72,7 @@ class Page extends Component {
       className,
       location,
       children,
+      isNetCore,
       isSmallScreen,
       isSidebarVisible,
       enableColorImpairedMode,
@@ -82,7 +83,9 @@ class Page extends Component {
     return (
       <ColorImpairedContext.Provider value={enableColorImpairedMode}>
         <div className={className}>
-          <SignalRConnector />
+          <SignalRConnector
+            isNetCore={isNetCore}
+          />
 
           <PageHeader
             onSidebarToggle={onSidebarToggle}
@@ -118,6 +121,7 @@ Page.propTypes = {
   className: PropTypes.string,
   location: locationShape.isRequired,
   children: PropTypes.node.isRequired,
+  isNetCore: PropTypes.bool.isRequired,
   isSmallScreen: PropTypes.bool.isRequired,
   isSidebarVisible: PropTypes.bool.isRequired,
   isUpdated: PropTypes.bool.isRequired,
