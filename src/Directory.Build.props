@@ -74,9 +74,6 @@
   </ItemGroup>
 
   <PropertyGroup>
-    <!-- We don't want separate framework directories till we go dotnet core -->
-    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-
     <!-- For now keep the NzbDrone namespace -->
     <RootNamespace Condition="'$(LidarrProject)'=='true'">$(MSBuildProjectName.Replace('Lidarr','NzbDrone'))</RootNamespace>
   </PropertyGroup>
