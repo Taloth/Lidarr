@@ -1,12 +1,15 @@
 using System;
 using System.Collections.Specialized;
-using System.Configuration.Install;
 using System.Diagnostics;
 using System.Linq;
 using System.ServiceProcess;
 using NLog;
 using NzbDrone.Common.Extensions;
 using NzbDrone.Common.Processes;
+
+#if !NETCOREAPP3_0
+using System.Configuration.Install;
+#endif
 
 namespace NzbDrone.Common
 {
@@ -62,9 +65,10 @@ namespace NzbDrone.Common
 
         public virtual void Install(string serviceName)
         {
+
             _logger.Info("Installing service '{0}'", serviceName);
 
-
+#if !NETCOREAPP3_0
             var installer = new ServiceProcessInstaller
                                 {
                                     Account = ServiceAccount.LocalService
@@ -86,6 +90,35 @@ namespace NzbDrone.Common
             serviceInstaller.Parent = installer;
 
             serviceInstaller.Install(new ListDictionary());
+#else
+            var args = $"create {serviceName} " +
+                $"DisplayName= \"{serviceName}\" " +
+                $"binpath= \"{Process.GetCurrentProcess().MainModule.FileName}\" " +
+                "start= auto " +
+                "depend= EventLog/Tcpip/http " +
+                "obj= \"NT AUTHORITY\\LocalService\"";
+
+            _logger.Info(args);
+
+            var installOutput = _processProvider.StartAndCapture("sc.exe", args);
+
+            if (installOutput.ExitCode != 0)
+            {
+                _logger.Error($"Failed to install service: {installOutput.Lines.Select(x => x.Content).ConcatToString("\n")}");
+                throw new ApplicationException("Failed to install service");
+            }
+
+            _logger.Info(installOutput.Lines.Select(x => x.Content).ConcatToString("\n"));
+
+            var descOutput = _processProvider.StartAndCapture("sc.exe", $"description {serviceName} \"Lidarr Application Server\"");
+            if (descOutput.ExitCode != 0)
+            {
+                _logger.Error($"Failed to install service: {descOutput.Lines.Select(x => x.Content).ConcatToString("\n")}");
+                throw new ApplicationException("Failed to install service");
+            }
+
+            _logger.Info(descOutput.Lines.Select(x => x.Content).ConcatToString("\n"));
+#endif
 
             _logger.Info("Service Has installed successfully.");
         }
@@ -96,12 +129,17 @@ namespace NzbDrone.Common
 
             Stop(serviceName);
 
+#if !NETCOREAPP3_0
             var serviceInstaller = new ServiceInstaller();
 
             var context = new InstallContext("service_uninstall.log", null);
             serviceInstaller.Context = context;
             serviceInstaller.ServiceName = serviceName;
             serviceInstaller.Uninstall(null);
+#else
+            var output = _processProvider.StartAndCapture("sc.exe", $"delete {serviceName}");
+            _logger.Info(output.Lines.Select(x => x.Content).ConcatToString("\n"));
+#endif
 
             _logger.Info("{0} successfully uninstalled", serviceName);
         }
