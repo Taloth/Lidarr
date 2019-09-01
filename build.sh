@@ -9,12 +9,9 @@ winAppProj=$sourceFolder/NzbDrone/Lidarr.csproj
 #Artifact variables
 artifactsFolder="./_artifacts";
 artifactsFolderWindows=$artifactsFolder/windows/Lidarr
-artifactsFolderLinux=$artifactsFolder/linux/Lidarr
+artifactsFolderLinux=$artifactsFolder/linux
 artifactsFolderMacOS=$artifactsFolder/macos/Lidarr
 artifactsFolderMacOSApp=$artifactsFolder/macos-app
-
-nuget='tools/nuget/nuget.exe';
-vswhere='tools/vswhere/vswhere.exe';
 
 CheckExitCode()
 {
@@ -88,13 +85,14 @@ Build()
     CheckExitCode dotnet clean $slnFile -c Debug
     CheckExitCode dotnet clean $slnFile -c Release
     CheckExitCode dotnet build $slnFile -c Release
-    CheckExitCode dotnet publish $slnFile -c Release --no-self-contained -r win-x64
-    CheckExitCode dotnet publish $slnFile -c Release --no-self-contained -r linux-x64
-    CheckExitCode dotnet publish $slnFile -c Release --no-self-contained -r osx-x64
+    CheckExitCode dotnet publish $slnFile -c Release -f netcoreapp3.0 -r win-x64
+    CheckExitCode dotnet publish $slnFile -c Release -f netcoreapp3.0 -r osx-x64
+    CheckExitCode dotnet publish $slnFile -c Release -f netcoreapp3.0 -r linux-x64
+    CheckExitCode dotnet publish $slnFile -c Release -f net462 -r linux-x64
 
     # The tray app is a WindowsDesktop project and wont build on posix
     if [ $os = "windows" ] ; then
-        CheckExitCode dotnet publish $winAppProj -c Release --no-self-contained -r win-x64
+        CheckExitCode dotnet publish $winAppProj -c Release -f netcoreapp3.0 -r win-x64
     fi
 
     ProgressEnd 'Build'
@@ -113,68 +111,75 @@ RunGulp()
     ProgressEnd 'Running gulp'
 }
 
-PackageLinux()
+PackageFiles()
 {
-    ProgressStart 'Creating Linux Package'
+    local folder="$1"
+    local framework="$2"
+    local runtime="$3"
 
-    rm -r $artifactsFolderLinux
-    mkdir -p $artifactsFolderLinux
-    cp -r $outputFolder/linux-x64/publish/* $artifactsFolderLinux
-    cp -r $outputFolder/Lidarr.Update/linux-x64/publish $artifactsFolderLinux/Lidarr.Update
-    cp -r $outputFolder/UI $artifactsFolderLinux
+    rm -r $folder
+    mkdir -p $folder
+    cp -r $outputFolder/$framework/$runtime/publish/* $folder
+    cp -r $outputFolder/Lidarr.Update/$framework/$runtime/publish $folder/Lidarr.Update
+    cp -r $outputFolder/UI $folder
 
-    CleanFolder $artifactsFolderLinux
+    CleanFolder $folder
 
     echo "Adding LICENSE.md"
-    cp LICENSE.md $artifactsFolderLinux
+    cp LICENSE.md $folder
+}
+
+PackageLinux()
+{
+    local framework="$1"
+
+    ProgressStart "Creating Linux Package for $framework"
+
+    local runtime="linux-x64"
+    local folder=$artifactsFolderLinux/$1/Lidarr
+
+    PackageFiles "$folder" $framework $runtime
 
     echo "Removing Service helpers"
-    rm -f $artifactsFolderLinux/ServiceUninstall.*
-    rm -f $artifactsFolderLinux/ServiceInstall.*
+    rm -f $folder/ServiceUninstall.*
+    rm -f $folder/ServiceInstall.*
 
     echo "Removing native windows binaries Sqlite, fpcalc"
-    rm -f $artifactsFolderLinux/fpcalc*
+    rm -f $folder/fpcalc*
 
     echo "Removing Lidarr.Windows"
-    rm $artifactsFolderLinux/Lidarr.Windows.*
+    rm $folder/Lidarr.Windows.*
 
     echo "Adding Lidarr.Mono to UpdatePackage"
-    cp $artifactsFolderLinux/Lidarr.Mono.* $artifactsFolderLinux/Lidarr.Update
+    cp $folder/Lidarr.Mono.* $folder/Lidarr.Update
 
-    ProgressEnd 'Creating Linux Package'
+    ProgressEnd "Creating Linux Package for $framework"
 }
 
 PackageMacOS()
 {
     ProgressStart 'Creating MacOS Package'
 
-    rm -r $artifactsFolderMacOS
-    mkdir -p $artifactsFolderMacOS
-    cp -r $outputFolder/osx-x64/publish/* $artifactsFolderMacOS
-    cp -r $outputFolder/Lidarr.Update/osx-x64/publish $artifactsFolderMacOS/Lidarr.Update
-    cp -r $outputFolder/UI $artifactsFolderMacOS
+    local folder=$artifactsFolderMacOS
 
-    CleanFolder $artifactsFolderMacOS
-
-    echo "Adding LICENSE.md"
-    cp LICENSE.md $artifactsFolderMacOS
+    PackageFiles "$folder" "netcoreapp3.0" "osx-x64"
 
     echo "Adding Startup script"
-    cp ./macOS/Lidarr $artifactsFolderMacOS
-    dos2unix $artifactsFolderMacOS/Lidarr
+    cp ./macOS/Lidarr $folder
+    dos2unix $folder/Lidarr
 
     echo "Removing Service helpers"
-    rm -f $artifactsFolderMacOS/ServiceUninstall.*
-    rm -f $artifactsFolderMacOS/ServiceInstall.*
+    rm -f $folder/ServiceUninstall.*
+    rm -f $folder/ServiceInstall.*
 
     echo "Removing native windows fpcalc"
-    rm -f $artifactsFolderMacOS/fpcalc.exe
+    rm -f $folder/fpcalc.exe
 
     echo "Removing Lidarr.Windows"
-    rm $artifactsFolderMacOS/Lidarr.Windows.*
+    rm $folder/Lidarr.Windows.*
 
     echo "Adding Lidarr.Mono to UpdatePackage"
-    cp $artifactsFolderMacOS/Lidarr.Mono.* $artifactsFolderMacOS/Lidarr.Update
+    cp $folder/Lidarr.Mono.* $artifactsFolderMacOS/Lidarr.Update
 
     ProgressEnd 'Creating MacOS Package'
 }
@@ -183,16 +188,18 @@ PackageMacOSApp()
 {
     ProgressStart 'Creating macOS App Package'
 
-    rm -r $artifactsFolderMacOSApp
-    mkdir $artifactsFolderMacOSApp
-    cp -r ./macOS/Lidarr.app $artifactsFolderMacOSApp
-    mkdir -p $artifactsFolderMacOSApp/Lidarr.app/Contents/MacOS
+    local folder=$artifactsFolderMacOSApp
+
+    rm -r $folder
+    mkdir $folder
+    cp -r ./macOS/Lidarr.app $folder
+    mkdir -p $folder/Lidarr.app/Contents/MacOS
 
     echo "Copying Binaries"
-    cp -r $artifactsFolderMacOS/* $artifactsFolderMacOSApp/Lidarr.app/Contents/MacOS
+    cp -r $artifactsFolderMacOS/* $folder/Lidarr.app/Contents/MacOS
 
     echo "Removing Update Folder"
-    rm -r $artifactsFolderMacOSApp/Lidarr.app/Contents/MacOS/Lidarr.Update
+    rm -r $folder/Lidarr.app/Contents/MacOS/Lidarr.Update
 
     ProgressEnd 'Creating macOS App Package'
 }
@@ -201,17 +208,19 @@ PackageTests()
 {
     ProgressStart 'Creating Test Package'
 
-    cp ./test.sh $testPackageFolder/win-x64/publish
-    cp ./test.sh $testPackageFolder/linux-x64/publish
-    cp ./test.sh $testPackageFolder/osx-x64/publish
+    cp ./test.sh $testPackageFolder/netcoreapp3.0/win-x64/publish
+    cp ./test.sh $testPackageFolder/netcoreapp3.0/linux-x64/publish
+    cp ./test.sh $testPackageFolder/net462/linux-x64/publish
+    cp ./test.sh $testPackageFolder/netcoreapp3.0/osx-x64/publish
     
     rm -f $testPackageFolder/*.log.config
 
     # Mac fpcalc being in the linux tests breaks fpcalc detection
-    rm $testPackageFolder/linux-x64/publish/fpcalc
+    rm $testPackageFolder/netcoreapp3.0/linux-x64/publish/fpcalc
+    rm $testPackageFolder/net462/linux-x64/publish/fpcalc
 
     # geckodriver.exe isn't copied by dotnet publish
-    cp $testPackageFolder/geckodriver.exe $testPackageFolder/win-x64/publish
+    cp $testPackageFolder/netcoreapp3.0/geckodriver.exe $testPackageFolder/netcoreapp3.0/win-x64/publish
 
     CleanFolder $testPackageFolder
 
@@ -222,25 +231,19 @@ PackageWindows()
 {
     ProgressStart 'Creating Windows Package'
 
-    rm -r $artifactsFolderWindows
-    mkdir -p $artifactsFolderWindows
-    cp -r $outputFolder/win-x64/publish/* $artifactsFolderWindows
-    cp -r $outputFolder/Lidarr.Update/win-x64/publish $artifactsFolderWindows/Lidarr.Update
-    cp -r $outputFolder/UI $artifactsFolderWindows
-
-    CleanFolder $artifactsFolderWindows
-        
-    echo "Adding LICENSE.md"
-    cp LICENSE.md $artifactsFolderWindows
+    local runtime="win-x64"
+    local folder=$artifactsFolderWindows/$1
+    
+    PackageFiles "$folder" "netcoreapp3.0" "win-x64"
 
     echo "Removing Lidarr.Mono"
-    rm -f $artifactsFolderWindows/Lidarr.Mono.*
+    rm -f $folder/Lidarr.Mono.*
 
     echo "Adding Lidarr.Windows to UpdatePackage"
-    cp $artifactsFolderWindows/Lidarr.Windows.* $artifactsFolderWindows/Lidarr.Update
+    cp $folder/Lidarr.Windows.* $folder/Lidarr.Update
 
     echo "Removing MacOS fpcalc"
-    rm $artifactsFolderWindows/fpcalc
+    rm $folder/fpcalc
 
     ProgressEnd 'Creating Windows Package'
 }
@@ -301,7 +304,8 @@ fi
 if [ -z "$ONLY_BACKEND" ] && [ -z "$ONLY_FRONTEND" ];
 then
     PackageWindows
-    PackageLinux
+    PackageLinux "netcoreapp3.0"
+    PackageLinux "net462"
     PackageMacOS
     PackageMacOSApp
 fi
