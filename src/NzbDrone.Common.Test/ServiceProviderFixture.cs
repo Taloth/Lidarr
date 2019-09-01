@@ -10,7 +10,6 @@ using NzbDrone.Test.Common.Categories;
 namespace NzbDrone.Common.Test
 {
     [TestFixture]
-    [Timeout(15000)]
     public class ServiceProviderFixture : TestBase<ServiceProvider>
     {
         private const string ALWAYS_INSTALLED_SERVICE = "SCardSvr"; //Smart Card

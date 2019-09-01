@@ -2,8 +2,15 @@
   <PropertyGroup>
     <TargetFrameworks>net462;netcoreapp3.0</TargetFrameworks>
   </PropertyGroup>
-  <ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net462'">
     <PackageReference Include="Mono.Posix-4.5" Version="4.5.0" />
+  </ItemGroup>
+  <!-- 
+       The netstandard veresion here doesn't work in net framework
+       See https://github.com/xamarin/XamarinComponents/issues/282
+  -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.0'">
+    <PackageReference Include="Mono.Posix.NETStandard" Version="1.0.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\NzbDrone.Common.Test\Lidarr.Common.Test.csproj" />
