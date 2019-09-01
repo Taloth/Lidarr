@@ -59,6 +59,7 @@ namespace Lidarr.Api.V1.System
                 AppData = _appFolderInfo.GetAppDataPath(),
                 OsName = _osInfo.Name,
                 OsVersion = _osInfo.Version,
+                IsNetCore = PlatformInfo.IsNetCore,
                 IsMonoRuntime = PlatformInfo.IsMono,
                 IsMono = PlatformInfo.IsMono,
                 IsLinux = OsInfo.IsLinux,
