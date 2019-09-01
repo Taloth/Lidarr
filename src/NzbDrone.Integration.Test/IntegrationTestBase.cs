@@ -5,8 +5,6 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using FluentAssertions;
-using Microsoft.AspNet.SignalR.Client;
-using Microsoft.AspNet.SignalR.Client.Transports;
 using NLog;
 using NLog.Config;
 using NLog.Targets;
@@ -33,6 +31,15 @@ using NzbDrone.Test.Common.Categories;
 using RestSharp;
 using NzbDrone.Core.MediaFiles.TrackImport.Manual;
 using NzbDrone.Test.Common;
+using System.Threading.Tasks;
+
+#if NETCOREAPP3_0
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.AspNetCore.SignalR.Client;
+#else
+using Microsoft.AspNet.SignalR.Client;
+using Microsoft.AspNet.SignalR.Client.Transports;
+#endif
 
 namespace NzbDrone.Integration.Test
 {
@@ -62,7 +69,12 @@ namespace NzbDrone.Integration.Test
         public ClientBase<AlbumResource> WantedCutoffUnmet;
 
         private List<SignalRMessage> _signalRReceived;
+
+#if NETCOREAPP3_0
+        private HubConnection _signalrConnection;
+#else
         private Connection _signalrConnection;
+#endif
 
         protected IEnumerable<SignalRMessage> SignalRMessages => _signalRReceived;
 
@@ -141,10 +153,16 @@ namespace NzbDrone.Integration.Test
         }
 
         [TearDown]
-        public void IntegrationTearDown()
+#pragma warning disable CS1998
+        public async Task IntegrationTearDown()
+#pragma warning restore CS1998
         {
             if (_signalrConnection != null)
             {
+
+#if NETCOREAPP3_0
+                await _signalrConnection.StopAsync();
+#else
                 switch (_signalrConnection.State)
                 {
                     case ConnectionState.Connected:
@@ -154,6 +172,7 @@ namespace NzbDrone.Integration.Test
                             break;
                         }
                 }
+#endif
 
                 _signalrConnection = null;
                 _signalRReceived = new List<SignalRMessage>();
@@ -180,6 +199,52 @@ namespace NzbDrone.Integration.Test
             return path;
         }
 
+#if NETCOREAPP3_0
+        protected async Task ConnectSignalR()
+        {
+            _signalRReceived = new List<SignalRMessage>();
+            _signalrConnection = new HubConnectionBuilder().WithUrl("http://localhost:8686/signalr/messages").Build();
+
+
+            var cts = new CancellationTokenSource();
+
+                _signalrConnection.Closed += e =>
+            {
+                cts.Cancel();
+                return Task.CompletedTask;
+            };
+
+                _signalrConnection.On<SignalRMessage>("receiveMessage", (message) =>
+            {
+                _signalRReceived.Add(message);
+            });
+
+            var connected = false;
+            var retryCount = 0;
+
+            while (!connected)
+            {
+                try
+                {
+                    Console.WriteLine("Connecting to signalR");
+
+                        await _signalrConnection.StartAsync();
+                    connected = true;
+                    break;
+                }
+                catch (Exception e)
+                {
+                    if (retryCount > 25)
+                    {
+                        Assert.Fail("Couldn't establish signalR connection");
+                    }
+                }
+
+                retryCount++;
+                Thread.Sleep(200);
+            }
+        }
+#else
         protected void ConnectSignalR()
         {
             _signalRReceived = new List<SignalRMessage>();
@@ -208,6 +273,7 @@ namespace NzbDrone.Integration.Test
 
             _signalrConnection.Received += json => _signalRReceived.Add(Json.Deserialize<SignalRMessage>(json)); ;
         }
+#endif
 
         public static void WaitForCompletion(Func<bool> predicate, int timeout = 10000, int interval = 500)
         {
