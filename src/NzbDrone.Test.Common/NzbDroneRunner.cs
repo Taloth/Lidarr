@@ -36,11 +36,12 @@ namespace NzbDrone.Test.Common
 
             GenerateConfigFile();
             
-            var lidarrConsoleExe = OsInfo.IsWindows ? "Lidarr.Console.exe" : "Lidarr.exe";
+            var lidarrConsoleExe = OsInfo.IsWindows ? "Lidarr.Console.exe" : "Lidarr.Console";
+            var frameworkFolder = PlatformInfo.IsNetCore ? "netcoreapp3.0" : "net462";
 
             if (BuildInfo.IsDebug)
             {
-                Start(Path.Combine(TestContext.CurrentContext.TestDirectory, "..", "_output", "Lidarr.Console.exe"));
+                Start(Path.Combine(TestContext.CurrentContext.TestDirectory, "..", "..", "_output", frameworkFolder, "Lidarr.Console.dll"));
             }
             else
             {

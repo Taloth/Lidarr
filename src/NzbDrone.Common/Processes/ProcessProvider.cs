@@ -361,7 +361,10 @@ namespace NzbDrone.Common.Processes
             {
                 return ("mono", $"--debug {path} {args}");
             }
-
+            if (path.EndsWith(".dll", StringComparison.InvariantCultureIgnoreCase))
+            {
+                return ("dotnet", $"{path} {args}");
+            }
             if (OsInfo.IsWindows && path.EndsWith(".bat", StringComparison.InvariantCultureIgnoreCase))
             {
                 return ("cmd.exe", $"/c {path} {args}");
