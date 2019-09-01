@@ -1,14 +1,11 @@
-﻿using System.Collections.Generic;
-using Moq;
-using NUnit.Framework;
-using NzbDrone.Common.Disk;
+﻿using NUnit.Framework;
 using NzbDrone.Common.Test.DiskTests;
 using NzbDrone.Mono.Disk;
 
 namespace NzbDrone.Mono.Test.DiskProviderTests
 {
     [TestFixture]
-    [Platform("Mono")]
+    [Platform(Exclude="Win")]
     public class FreeSpaceFixture : FreeSpaceFixtureBase<DiskProvider>
     {
         [SetUp]
@@ -20,7 +17,7 @@ namespace NzbDrone.Mono.Test.DiskProviderTests
 
         public FreeSpaceFixture()
         {
-            MonoOnly();
+            PosixOnly();
         }
     }
 }

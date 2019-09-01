@@ -27,6 +27,7 @@ namespace NzbDrone.Common.Test
         }
 
         // .net 4.6.2 throws NotSupportedException instead of ArgumentException here
+        [Platform("Net")]
         [TestCase("http://")]
         public void DownloadString_should_throw_on_not_supported_string_windows(string url)
         {
@@ -36,7 +37,8 @@ namespace NzbDrone.Common.Test
         }
 
         [TestCase("http://")]
-        public void DownloadString_should_throw_on_not_supported_string_mono(string url)
+        [Platform(Exclude="Net")]
+        public void DownloadString_should_throw_on_not_supported_string(string url)
         {
             MonoOnly();
             Assert.Throws<System.Net.WebException>(() => Subject.DownloadString(url));
