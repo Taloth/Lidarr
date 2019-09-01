@@ -396,7 +396,7 @@ stages:
             imageName: 'ubuntu-16.04'
             pattern: 'Lidarr.**.linux.tar.gz'
             failBuild: true
-          Linux:
+          Mono:
             osName: 'Linux'
             testName: 'Mono'
             imageName: 'ubuntu-16.04'
