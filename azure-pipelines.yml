@@ -298,6 +298,8 @@ stages:
           export DYLD_FALLBACK_LIBRARY_PATH=${BUILD_SOURCESDIRECTORY}/_tests
         displayName: Make fpcalc Executable
         condition: and(succeeded(), eq(variables['osName'], 'Mac'))
+      - bash: find ${TESTSFOLDER} -name "Lidarr.Test.Dummy" -exec chmod a+x {} \;
+        displayName: Make Test Dummy Executable
       - task: Bash@3
         displayName: Run Tests
         env:
