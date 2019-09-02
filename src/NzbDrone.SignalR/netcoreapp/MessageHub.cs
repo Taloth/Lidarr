@@ -1,9 +1,8 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
 using NzbDrone.Common.EnvironmentInfo;
-using NzbDrone.SignalR;
 
-namespace Lidarr.SignalR.NetCoreApp
+namespace NzbDrone.SignalR.NetCoreApp
 {
     public class SignalRMessageBroadcaster : IBroadcastSignalRMessage
     {
