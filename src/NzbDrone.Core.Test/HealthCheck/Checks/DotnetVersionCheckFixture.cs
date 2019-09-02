@@ -6,6 +6,7 @@ using NzbDrone.Core.Test.Framework;
 
 namespace NzbDrone.Core.Test.HealthCheck.Checks
 {
+    [Platform(Exclude="NetCore")]
     [TestFixture]
     public class DotnetVersionCheckFixture : CoreTest<DotnetVersionCheck>
     {
