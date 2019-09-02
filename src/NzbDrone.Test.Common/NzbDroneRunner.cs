@@ -36,7 +36,7 @@ namespace NzbDrone.Test.Common
 
             GenerateConfigFile();
             
-            var lidarrConsoleExe = OsInfo.IsWindows ? "Lidarr.Console.exe" : "Lidarr.Console";
+            var lidarrConsoleExe = OsInfo.IsWindows || PlatformInfo.IsMono ? "Lidarr.Console.exe" : "Lidarr.Console";
             var frameworkFolder = PlatformInfo.IsNetCore ? "netcoreapp3.0" : "net462";
 
             if (BuildInfo.IsDebug)

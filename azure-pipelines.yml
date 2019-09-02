@@ -62,6 +62,11 @@ stages:
           version: $(dotnetVersion)
       - bash: ./build.sh --only-backend
         displayName: Build Lidarr Backend
+      - bash: |
+          find ${OUTPUTFOLDER} -type f ! -path "*/publish/*" -exec rm -rf {} \;
+          find ${TESTSFOLDER} -type f ! -path "*/publish/*" -exec rm -rf {} \;
+          ls -lR
+        displayName: Clean up intermediate output
       - publish: $(outputFolder)
         artifact: '$(osName)Backend'
         displayName: Publish Backend
@@ -180,6 +185,7 @@ stages:
           chmod a+x $(artifactsFolder)/macos/Lidarr/Lidarr
           chmod a+x $(artifactsFolder)/macos-app/Lidarr.app/Contents/MacOS/fpcalc
           chmod a+x $(artifactsFolder)/macos-app/Lidarr.app/Contents/MacOS/Lidarr
+          find . -name "Lidarr.Console" -exec chmod a+x {} \;
         displayName: Set Mac executable bits
       - task: ArchiveFiles@2
         displayName: Create Windows zip
@@ -249,7 +255,7 @@ stages:
             testName: 'Linux'
             imageName: 'ubuntu-16.04'
           Mono:
-            osName: 'Mono'
+            osName: 'Linux'
             testName: 'Mono'
             imageName: 'ubuntu-16.04'
           Mac:
@@ -258,7 +264,7 @@ stages:
             imageName: 'macos-10.13'
           Windows:
             osName: 'Windows'
-            testName: 'Mac'
+            testName: 'Windows'
             imageName: 'vs2017-win2016'
 
       pool:
@@ -332,7 +338,7 @@ stages:
             pattern: 'Lidarr.**.osx.tar.gz'
           Windows:
             osName: 'Windows'
-            testName: 'Mac'
+            testName: 'Windows'
             imageName: 'vs2017-win2016'
             pattern: 'Lidarr.**.windows.zip'
 
