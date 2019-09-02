@@ -4,7 +4,9 @@ using Lidarr.Http;
 using NzbDrone.Common.Composition;
 using NzbDrone.Common.EnvironmentInfo;
 
-#if !NETCOREAPP3_0
+#if NETCOREAPP3_0
+using NzbDrone.SignalR.NetCoreApp;
+#else
 using NzbDrone.SignalR.NetFramework;
 #endif
 
@@ -29,7 +31,9 @@ namespace NzbDrone.Host
         private MainAppContainerBuilder(StartupContext args, List<string> assemblies)
             : base(args, assemblies)
         {
-#if !NETCOREAPP3_0
+#if NETCOREAPP3_0
+            AutoRegisterImplementations<MessageHub>();
+#else
             AutoRegisterImplementations<NzbDronePersistentConnection>();
 #endif
 

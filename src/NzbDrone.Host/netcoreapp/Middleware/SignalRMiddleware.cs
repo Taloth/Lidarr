@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using NLog;
 using NzbDrone.Common.Composition;
 using NzbDrone.Core.Configuration;
-using Lidarr.SignalR.NetCoreApp;
+using NzbDrone.SignalR.NetCoreApp;
 
 namespace NzbDrone.Host.NetCoreApp.Middleware
 {
