@@ -97,7 +97,7 @@ class SignalRConnector extends Component {
   componentDidMount() {
     console.log('[signalR] starting');
 
-    if (this.props.isNetCore) {
+    if (this.props.isNetCore || true) {
       this.createSignalRCoreConnection();
     } else {
       this.createSignalRFrameworkConnection();
