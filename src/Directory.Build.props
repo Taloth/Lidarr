@@ -1,8 +1,9 @@
 <Project>
   <!-- Common to all Lidarr Projects -->
   <PropertyGroup>
-    <Platforms>x86;x64</Platforms>
     <PlatformTarget>x64</PlatformTarget>
+    <TargetLatestRuntimePatch>true</TargetLatestRuntimePatch>
+    <RuntimeIdentifiers>win-x64;osx-x64;linux-x64</RuntimeIdentifiers>
     
     <LidarrRootDir>$(MSBuildThisFileDirectory)..\</LidarrRootDir>
 

@@ -85,10 +85,10 @@ Build()
     CheckExitCode dotnet clean $slnFile -c Debug
     CheckExitCode dotnet clean $slnFile -c Release
     CheckExitCode dotnet build $slnFile -c Release
+    CheckExitCode dotnet publish $slnFile -c Release -f net462 -r linux-x64
     CheckExitCode dotnet publish $slnFile -c Release -f netcoreapp3.0 -r win-x64
     CheckExitCode dotnet publish $slnFile -c Release -f netcoreapp3.0 -r osx-x64
     CheckExitCode dotnet publish $slnFile -c Release -f netcoreapp3.0 -r linux-x64
-    CheckExitCode dotnet publish $slnFile -c Release -f net462 -r linux-x64
 
     # The tray app is a WindowsDesktop project and wont build on posix
     if [ $os = "windows" ] ; then

@@ -531,8 +531,11 @@ stages:
             sonar.coverage.exclusions=**/Lidarr.Api.V1/**/*,**/MonoTorrent/**/*,**/Marr.Data/**/*
             sonar.cs.opencover.reportsPaths=$(Build.SourcesDirectory)/_tests/CoverageResults/coverage.opencover.xml
             sonar.cs.nunit.reportsPaths=$(Build.SourcesDirectory)/TestResult.xml
-      - bash: ./build.sh --only-backend
-        displayName: Build Lidarr Backend
+      - task: DotNetCoreCLI@2
+        displayName: Build backend
+        inputs:
+          command: 'build'
+          projects: 'src/Lidarr.sln'
       - task: Bash@3
         displayName: Coverage Unit Tests
         inputs:
