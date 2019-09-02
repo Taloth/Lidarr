@@ -84,7 +84,6 @@ namespace NzbDrone.Common.Test
         }
 
         [Test]
-        [Platform(Exclude="MacOsX")]
         [Retry(3)]
         public void exists_should_find_running_process()
         {
@@ -101,7 +100,6 @@ namespace NzbDrone.Common.Test
 
 
         [Test]
-        [Platform(Exclude="MacOsX")]
         public void kill_all_should_kill_all_process_with_name()
         {
             var dummy1 = StartDummyProcess();
