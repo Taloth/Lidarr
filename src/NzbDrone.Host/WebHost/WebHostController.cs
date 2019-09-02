@@ -92,11 +92,11 @@ namespace NzbDrone.Host.NetCoreApp
                         {
                             options.AllowSynchronousIO = true;
                         })
-                    .AddSignalR()
-                    .AddNewtonsoftJsonProtocol(options =>
-                        {
-                            options.PayloadSerializerSettings = Json.GetSerializerSettings();
-                        });
+                    .AddSignalR();
+                    // .AddNewtonsoftJsonProtocol(options =>
+                    //     {
+                    //         options.PayloadSerializerSettings = Json.GetSerializerSettings();
+                    //     });
                 })
                 .Configure(app =>
                 {
