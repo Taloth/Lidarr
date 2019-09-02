@@ -2,7 +2,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
 using NzbDrone.Common.EnvironmentInfo;
 
-namespace NzbDrone.SignalR.NetCoreApp
+namespace NzbDrone.SignalR
 {
     public class SignalRMessageBroadcaster : IBroadcastSignalRMessage
     {
