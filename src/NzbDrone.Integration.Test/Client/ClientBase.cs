@@ -8,6 +8,7 @@ using NzbDrone.Common.Serializer;
 using RestSharp;
 using System.Linq;
 using Lidarr.Http;
+using NzbDrone.Common.EnvironmentInfo;
 
 namespace NzbDrone.Integration.Test.Client
 {
@@ -70,7 +71,11 @@ namespace NzbDrone.Integration.Test.Client
 
         private static void AssertDisableCache(IList<Parameter> headers)
         {
-            headers.Single(c => c.Name == "Cache-Control").Value.Should().Be("no-store, must-revalidate, no-cache, max-age=0");
+            var expected = PlatformInfo.IsNetCore ?
+                "no-store, must-revalidate, no-cache, max-age=0" :
+                "no-cache, no-store, must-revalidate, max-age=0";
+
+            headers.Single(c => c.Name == "Cache-Control").Value.Should().Be(expected);
             headers.Single(c => c.Name == "Pragma").Value.Should().Be("no-cache");
             headers.Single(c => c.Name == "Expires").Value.Should().Be("0");
         }

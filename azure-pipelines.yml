@@ -64,7 +64,9 @@ stages:
         displayName: Build Lidarr Backend
       - bash: |
           find ${OUTPUTFOLDER} -type f ! -path "*/publish/*" -exec rm -rf {} \;
+          find ${OUTPUTFOLDER} -depth -empty -type d -exec rm -r "{}" \;
           find ${TESTSFOLDER} -type f ! -path "*/publish/*" -exec rm -rf {} \;
+          find ${TESTSFOLDER} -depth -empty -type d -exec rm -r "{}" \;
           ls -lR
         displayName: Clean up intermediate output
       - publish: $(outputFolder)
@@ -378,6 +380,7 @@ stages:
       - bash: |
           mkdir -p ./bin/
           cp -r -v ${BUILD_ARTIFACTSTAGINGDIRECTORY}/bin/Lidarr/. ./bin/
+          ls -lR
         displayName: Move Package Contents
       - task: Bash@3
         displayName: Run Integration Tests
