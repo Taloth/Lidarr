@@ -1,0 +1,3 @@
+<Project>
+  <Import Project="MonoFacades.targets" Condition="$(TargetFramework.StartsWith('net4')) and '$(RuntimeIdentifier)'!='win-x64'" />
+</Project>
